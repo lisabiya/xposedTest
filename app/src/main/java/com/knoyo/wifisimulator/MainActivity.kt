@@ -4,7 +4,6 @@ import android.content.ActivityNotFoundException
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
-import android.content.res.Resources
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -47,17 +46,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun hookMe() {
+//        XposedBridge.log("HookLogic >> current package:  lpparam.packageName")
+
 //        XposedBridge.invokeOriginalMethod()
-//        XposedHelpers.findAndHookMethod(
-//            "com.debby.ippick.MainActivity",
-//            Class.forName("com.debby.ippick.MainActivity").classLoader,
-//            "getInfo",
-//            object : XC_MethodReplacement() {
-//                @Throws(Throwable::class)
-//                override fun replaceHookedMethod(param: MethodHookParam): Any {
-//                    return "大家好，我是御天证道，我来自中国!"
-//                }
-//            })
+        XposedHelpers.findAndHookMethod(
+            localClassName,
+            classLoader,
+            "getInfo",
+            object : XC_MethodReplacement() {
+                @Throws(Throwable::class)
+                override fun replaceHookedMethod(param: MethodHookParam): Any {
+                    return "大家好，我是御天证道，我来自中国!"
+                }
+            })
     }
 
     private fun isExpModuleActive(context: Context?): Boolean {

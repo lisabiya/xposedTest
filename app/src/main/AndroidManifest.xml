@@ -25,11 +25,11 @@
         <!--指定xposed的最小版本-->
         <meta-data
             android:name="xposedminversion"
-            android:value="30+" />
+            android:value="42" />
         <!--插件的描述-->
         <meta-data
             android:name="xposeddescription"
-            android:value="xposed插件开发测试" />
+            android:value="WIFI Simulator(WIFI 模拟器)" />
     </application>
 
 </manifest>
