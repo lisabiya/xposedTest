@@ -1,4 +1,4 @@
-package com.knoyo.wifisimulator
+package com.debby.xposetest
 
 import android.content.ActivityNotFoundException
 import android.content.ContentResolver
@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import de.robv.android.xposed.XC_MethodReplacement
-import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
