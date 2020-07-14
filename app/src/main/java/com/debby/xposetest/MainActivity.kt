@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodReplacement
 import de.robv.android.xposed.XposedHelpers
 import kotlinx.android.synthetic.main.activity_main.*
@@ -26,10 +27,7 @@ class MainActivity : AppCompatActivity() {
         tvMessage.text = getInfo();
         btBind.setOnClickListener {
 //            intentTo()
-            hookMe()
-            Log.e(TAG, "*${isExpModuleActive(this)}*Active*")
-            Log.e(TAG, "*${getExpApps(this)}*APP*")
-
+//            hookMe()
         }
     }
 
@@ -55,7 +53,7 @@ class MainActivity : AppCompatActivity() {
             object : XC_MethodReplacement() {
                 @Throws(Throwable::class)
                 override fun replaceHookedMethod(param: MethodHookParam): Any {
-                    return "大家好，我是御天证道，我来自中国!"
+                    return "hook应用!"
                 }
             })
     }

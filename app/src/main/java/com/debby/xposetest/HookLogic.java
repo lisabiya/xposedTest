@@ -17,17 +17,27 @@ public class HookLogic implements IXposedHookLoadPackage {
         Log.e("HookLogic", "MESSS*(*(^&(*&");
         XposedBridge.log("HookLogic >> current package:" + lpparam.packageName);
         if ("com.debby.ippick".equals(lpparam.packageName)) {
+            Log.e("HookLogic", "MESSS*(*IN");
             try {
                 XposedHelpers.findAndHookMethod("com.debby.ippick.MainActivity", lpparam.classLoader,
                         "getInfo", new XC_MethodReplacement() {
                             @Override
                             protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
-                                return "大家好，我是御天证道，我来自中国!";
+                                return "已被honk的应用V2";
                             }
                         });
             } catch (Throwable t) {
                 XposedBridge.log(t);
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        for (Class<?> anInterface : getClass().getInterfaces()) {
+            Log.e("getInterfaces", anInterface.getName());
+        }
+
+        return "getInterfaces";
     }
 }
