@@ -35,10 +35,14 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 
     api 'de.robv.android.xposed:api:82'
+    implementation 'com.blankj:utilcode:1.26.0'
+    implementation "io.reactivex.rxjava3:rxjava:3.0.4"
+    implementation 'com.madgag:scpkix-jdk15on:1.47.0.2'
+
+//    implementation "net.lingala.zip4j:zip4j:2.6.1"
+
 //    api 'de.robv.android.xposed:api:82:sources'
 
 //    compileOnly 'me.weishu.exposed:exposed-xposedapi:0.4.5' // The Xposed API
-
-
-    implementation 'org.jetbrains.exposed:exposed:0.17.7'
+//    implementation 'org.jetbrains.exposed:exposed:0.17.7'
 }

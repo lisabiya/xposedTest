@@ -1,0 +1,4 @@
+<provider
+    android:name="me.weishu.exposed.InitProvider"
+    android:authorities="com.debby.ippick.InitProvider"
+    android:exported="true" />

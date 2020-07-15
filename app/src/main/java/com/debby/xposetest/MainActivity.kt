@@ -1,24 +1,26 @@
 package com.debby.xposetest
 
-import android.content.ActivityNotFoundException
-import android.content.ContentResolver
-import android.content.Context
+import android.R.attr
+import android.app.Activity
 import android.content.Intent
+import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import de.robv.android.xposed.IXposedHookLoadPackage
-import de.robv.android.xposed.XC_MethodReplacement
-import de.robv.android.xposed.XposedHelpers
+import com.blankj.utilcode.constant.PermissionConstants
+import com.blankj.utilcode.util.*
 import kotlinx.android.synthetic.main.activity_main.*
-import java.util.*
+import java.io.File
+
 
 class MainActivity : AppCompatActivity() {
 
     companion object {
         const val TAG = "MainActivity.Classs"
-
+        const val REQUEST_CODE = 1
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,87 +28,55 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         tvMessage.text = getInfo();
         btBind.setOnClickListener {
-//            intentTo()
-//            hookMe()
+            requestStorage()
         }
     }
 
-    fun intentTo() {
-        val t = Intent("me.weishu.exp.ACTION_MODULE_MANAGE")
-        t.data = Uri.parse("package:" + "com.debby.xposedtest")
-        t.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        try {
-            startActivity(t)
-        } catch (e: ActivityNotFoundException) {
-            // TaiChi not installed.
-        }
-    }
+    private fun requestStorage() {
+        PermissionUtils.permission(PermissionConstants.STORAGE)
+            .callback(object : PermissionUtils.FullCallback {
+                override fun onGranted(permissionsGranted: List<String>) {
+                    pickFileApk()
+                }
 
-    fun hookMe() {
-//        XposedBridge.log("HookLogic >> current package:  lpparam.packageName")
-
-//        XposedBridge.invokeOriginalMethod()
-        XposedHelpers.findAndHookMethod(
-            localClassName,
-            classLoader,
-            "getInfo",
-            object : XC_MethodReplacement() {
-                @Throws(Throwable::class)
-                override fun replaceHookedMethod(param: MethodHookParam): Any {
-                    return "hook应用!"
+                override fun onDenied(
+                    permissionsDeniedForever: List<String>,
+                    permissionsDenied: List<String>
+                ) {
+                    ToastUtils.showShort("需要存储权限")
                 }
             })
+            .theme { activity -> ScreenUtils.setFullScreen(activity) }
+            .request()
     }
 
-    private fun isExpModuleActive(context: Context?): Boolean {
-        var isExp = false
-        requireNotNull(context) { "context must not be null!!" }
-        try {
-            val contentResolver: ContentResolver = context.getContentResolver()
-            val uri: Uri = Uri.parse("content://me.weishu.exposed.CP/")
-            var result: Bundle? = null
-            try {
-                result = contentResolver.call(uri, "active", null, null)
-            } catch (e: RuntimeException) {
-                // TaiChi is killed, try invoke
-                try {
-                    val intent = Intent("me.weishu.exp.ACTION_ACTIVE")
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                } catch (e1: Throwable) {
-                    return false
+    private fun pickFileApk() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT)
+        intent.type = "*/*" //设置类型，我这里是任意类型，任意后缀的可以这样写。
+        intent.addCategory(Intent.CATEGORY_OPENABLE)
+        startActivityForResult(intent, REQUEST_CODE)
+
+        LogUtils.e(PathUtils.getDataPath())
+        LogUtils.e(PathUtils.getInternalAppDataPath())
+        LogUtils.e(PathUtils.getInternalAppFilesPath())
+
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == Activity.RESULT_OK) {
+            val uri: Uri? = data?.data //得到uri，后面就是将uri转化成file的过程。
+            if (uri != null) {
+                val file = UriUtils.uri2File(uri)
+                if (file != null) {
+                    Toast.makeText(this, file.path, Toast.LENGTH_LONG).show()
+                    ManifestTool.UnZip(this, file)
                 }
             }
-            if (result == null) {
-                result = contentResolver.call(uri, "active", null, null)
-            }
-            if (result == null) {
-                return false
-            }
-            isExp = result.getBoolean("active", false)
-        } catch (ignored: Throwable) {
         }
-        return isExp
-    }
-
-    private fun getExpApps(context: Context): List<String?>? {
-        val result: Bundle?
-        result = try {
-            context.contentResolver.call(
-                Uri.parse("content://me.weishu.exposed.CP/"),
-                "apps",
-                null,
-                null
-            )!!
-        } catch (e: Throwable) {
-            return Collections.emptyList()
-        }
-        return if (result == null) {
-            Collections.emptyList()
-        } else result.getStringArrayList("apps") ?: return Collections.emptyList()
     }
 
     private fun getInfo(): String? {
-        return "hello ,my name is Tom .I am from china"
+        return "选取需要重新打包的app"
     }
 }

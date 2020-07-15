@@ -23,7 +23,7 @@ public class HookLogic implements IXposedHookLoadPackage {
                         "getInfo", new XC_MethodReplacement() {
                             @Override
                             protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
-                                return "已被honk的应用V2";
+                                return "已被honk的应用V40";
                             }
                         });
             } catch (Throwable t) {
