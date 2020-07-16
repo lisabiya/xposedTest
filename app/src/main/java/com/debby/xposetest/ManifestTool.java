@@ -4,8 +4,8 @@ import android.content.Context;
 import android.util.Log;
 
 import com.blankj.utilcode.util.FileUtils;
+import com.blankj.utilcode.util.LogUtils;
 import com.blankj.utilcode.util.PathUtils;
-import com.blankj.utilcode.util.ShellUtils;
 import com.blankj.utilcode.util.ZipUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -24,10 +24,11 @@ import cn.wjdiankong.main.ParserChunkUtils;
 import cn.wjdiankong.main.XmlEditor;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.ObservableEmitter;
 import io.reactivex.rxjava3.core.ObservableOnSubscribe;
+import io.reactivex.rxjava3.core.ObservableSource;
 import io.reactivex.rxjava3.core.Observer;
 import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.functions.Function;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
@@ -36,82 +37,96 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 class ManifestTool {
     public static final String TAG = "ManifestTool";
 
-    public static Observable<AssetFile> initAsset(final Context context) {
-        return Observable.create(new ObservableOnSubscribe<AssetFile>() {
-            @Override
-            public void subscribe(ObservableEmitter<AssetFile> e) throws Exception {
-                AssetFile assetFile = new AssetFile();
+    //迁移assset文件到内部存储
+    private static Observable<AssetFile> initAsset(final Context context) {
+        return Observable.create((ObservableOnSubscribe<AssetFile>) e -> {
+            AssetFile assetFile = new AssetFile();
 
-                String provider = assetFile.getFileAsset() + assetFile.getProvider();
-                if (!FileUtils.isFileExists(provider)) {
-                    FileUtils.createOrExistsFile(provider);
-                    writeBytesToFile(context.getAssets().open(assetFile.getProvider()), provider);
-                }
-                String key = assetFile.getFileAsset() + assetFile.getKey();
-                if (!FileUtils.isFileExists(key)) {
-                    FileUtils.createOrExistsFile(key);
-                    writeBytesToFile(context.getAssets().open(assetFile.getKey()), key);
-                }
-                e.onNext(assetFile);
+            String provider = assetFile.getFileAsset() + assetFile.getProvider();
+            if (!FileUtils.isFileExists(provider)) {
+                FileUtils.createOrExistsFile(provider);
+                writeBytesToFile(context.getAssets().open(assetFile.getProvider()), provider);
             }
+            String key = assetFile.getFileAsset() + assetFile.getKey();
+            if (!FileUtils.isFileExists(key)) {
+                FileUtils.createOrExistsFile(key);
+                writeBytesToFile(context.getAssets().open(assetFile.getKey()), key);
+            }
+            e.onNext(assetFile);
         }).subscribeOn(Schedulers.io());
     }
 
-    public static void UnZip(final Context context, final File apkFilePath) {
-//        ZipUtils.unzipFile(FileUtils.)
-        final String filePath = PathUtils.getExternalDownloadsPath() + "/xposed/" + apkFilePath.getName().replace(".apk", "");
-
-        boolean isCreate = FileUtils.createOrExistsDir(filePath);
-        if (isCreate) {
-            initAsset(context).subscribe(new Observer<AssetFile>() {
-                @Override
-                public void onSubscribe(@NonNull Disposable d) {
-
-                }
-
-                @Override
-                public void onNext(@NonNull AssetFile assetFile) {
-                    if (assetFile == null) {
-                        Log.e(TAG, "创建Asset文件失败");
-                    } else {
-                        try {
-
-                            List<File> fileList = ZipUtils.unzipFile(apkFilePath.getPath(), filePath);
-                            for (File file : fileList) {
-                                if (file.getName().contains("AndroidManifest")) {
-                                    File out = new File(file.getParent() + "/out.xml");
-                                    AddTag(assetFile.getFileAsset() + assetFile.getProvider(), file, out);
-                                }
-                            }
-                            if (FileUtils.isDir(filePath + "/" + "META-INF")) {
-                                Log.e(TAG, "删除全部文件");
-                                FileUtils.delete(filePath + "/" + "META-INF");
-                            }
-                            CopyFile(context, assetFile, filePath);
-                            //打包
-                            zipFiles(filePath, filePath + ".apk");
-//                            zipFile.addFiles(fileList2);
-                            Log.e(TAG, "打包成功");
-                            assetFile.signApk(filePath + ".apk", filePath + "2.apk");
-                        } catch (IOException e) {
-                            Log.e(TAG, e.getMessage() + "IOException");
-                            e.printStackTrace();
-                        }
+    //创建核心任务
+    private static Observable<String> createApkTask(final Context context, final AssetFile assetFile, final File apkFilePath) {
+        return Observable.create(e -> {
+            String filePath = PathUtils.getExternalDownloadsPath() + "/xposed/"
+                    + apkFilePath.getName().replace(".apk", "");
+            if (assetFile == null) {
+                e.onNext("创建Asset文件失败");
+            } else {
+                e.onNext("开始解压apk");
+                List<File> fileList = ZipUtils.unzipFile(apkFilePath.getPath(), filePath);
+                e.onNext("解压apk");
+                for (File file : fileList) {
+                    if (file.getName().contains("AndroidManifest")) {
+                        File out = new File(file.getParent() + "/out.xml");
+                        AddTag(assetFile.getFileAsset() + assetFile.getProvider(), file, out);
+                        e.onNext("修改AndroidManifest");
                     }
                 }
-
-                @Override
-                public void onError(@NonNull Throwable e) {
-                    Log.e(TAG, e.getMessage() + "Throwable");
+                if (FileUtils.isDir(filePath + "/" + "META-INF")) {
+                    e.onNext("删除全部文件");
+                    FileUtils.delete(filePath + "/" + "META-INF");
                 }
+                CopyFile(context, assetFile, filePath);
+                e.onNext("复制额外文件");
+                //打包
+                zipFiles(filePath, filePath + ".apk");
+                e.onNext("打包成功");
+                assetFile.signApk(filePath + ".apk", filePath + "2.apk");
+                e.onNext("签名成功");
+            }
+        });
+    }
 
-                @Override
-                public void onComplete() {
+    /**
+     * 解压
+     *
+     * @param context
+     * @param apkFilePath
+     */
+    public static void UnZip(final Context context, final File apkFilePath) {
+        Observable.just(apkFilePath).flatMap((Function<File, ObservableSource<String>>) file -> {
+            String filePath = PathUtils.getExternalDownloadsPath() + "/xposed/"
+                    + apkFilePath.getName().replace(".apk", "");
+            boolean isCreate = FileUtils.createOrExistsDir(filePath);
+            if (isCreate) {
+                return initAsset(context).flatMap((Function<AssetFile, ObservableSource<String>>) assetFile ->
+                        createApkTask(context, assetFile, apkFilePath));
+            } else {
+                return Observable.just("创建工作文件失败");
+            }
+        }).subscribe(new Observer<String>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable d) {
 
-                }
+            }
 
-            });
-        }
+            @Override
+            public void onNext(@NonNull String msg) {
+                LogUtils.e(msg);
+            }
+
+            @Override
+            public void onError(@NonNull Throwable e) {
+                LogUtils.e(e);
+            }
+
+            @Override
+            public void onComplete() {
+                LogUtils.e("完成");
+            }
+        });
     }
 
     private static void zipFiles(String fileDirPath, String path) throws IOException {
