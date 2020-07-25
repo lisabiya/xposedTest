@@ -1,13 +1,15 @@
 # xposedTest
-侵入性较低的hook apk方案
+侵入性较低的hook apk方案，基本思路已实现
 包含解包，编辑，生成，签名一体化
 
 > 基本思路
 
 ```
-通过修改AndroidManifest注册provider,注册application
+通过修改AndroidManifest注册provider,进行低侵入式注册application
 复制dex，lib到对应文件夹
-重新打包签名
+重新打包签名，即可实现修改的apk包内注册了xposed插件
+例如 classes.dex 默认注册的是当前项目包名
+注册成功后，当前项目即可hook已修改的apk应用
 ```
 
 >实现参考
