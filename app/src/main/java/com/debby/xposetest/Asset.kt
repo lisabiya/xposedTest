@@ -15,7 +15,7 @@ class AssetFile {
     var fileAsset: String = PathUtils.getInternalAppDataPath() + "/innerStore/"
     var key: String = "my.jks"
     var provider = "provider.xml"
-    var classes = "classes9.dex"
+    var classes = "classes.dex"
     var exposed = "lib/armeabi-v7a/libdexposed.so"
     var epicV7 = "lib/armeabi-v7a/libepic.so"
     var fileList: List<String> = arrayOf(classes, exposed, epicV7).toList()

@@ -1,5 +1,6 @@
 # xposedTest
 侵入性较低的hook apk方案
+包含解包，编辑，生成，签名一体化
 
 > 基本思路
 
@@ -9,5 +10,15 @@
 重新打包签名
 ```
 
+>实现参考
+- [VirtualXposed](https://github.com/android-hacker/VirtualXposed)
+- [exposed](https://github.com/android-hacker/exposed)
 
-包含解包，编辑，生成，签名一体化
+
+> 说明
+```
+当前签名大文件apk时会出现失败，暂未解决，可以手动调用jarsigner签名
+assets文件夹下的provider.xml的类me.weishu.exposed.InitProvider存在在classes.dex文件内。
+```
+
+assets文件夹文件生成自 [exposed](https://github.com/lisabiya/exposed)
